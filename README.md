@@ -809,11 +809,11 @@ Ferramenta: **GitHub Actions** (`.github/workflows/ci-cd.yml`).
 |---|---|---|
 | Build | push e pull request em `main` e `develop` | `mvn -B -DskipTests package` com JDK 21 |
 | Testes | em paralelo com o build | `mvn -B test` (suíte JUnit/Mockito, sem banco) |
-| Imagem | push em `main` ou `cursor/entrega-devops` | `az acr build` publica `ecocompliance-api` no ACR |
-| Deploy staging | depois da imagem | atualiza `ecocompliance-staging` |
-| Deploy produção | depois da imagem | atualiza `ecocompliance-production` |
+| Imagem | push em `develop` ou `main` | `az acr build` publica `ecocompliance-api` no ACR |
+| Deploy staging | push em `develop` | atualiza `ecocompliance-staging` |
+| Deploy produção | push em `main` | atualiza `ecocompliance-production` |
 
-Pull request só compila e testa. Push em `main` ou `cursor/entrega-devops` publica os dois App Services. O Compose local, descrito acima, continua valendo para a máquina de desenvolvimento.
+Pull request só compila e testa. Merge na `develop` publica o staging. Merge na `main` publica a produção. A `main` só aceita pull request vindo da `develop`. O Compose local, descrito acima, continua valendo para a máquina de desenvolvimento.
 
 Staging: `https://ecocompliance-staging.azurewebsites.net`.  
 Produção: `https://ecocompliance-production.azurewebsites.net`.
