@@ -809,18 +809,14 @@ Ferramenta: **GitHub Actions** (`.github/workflows/ci-cd.yml`).
 |---|---|---|
 | Build | push e pull request em `main` e `develop` | `mvn -B -DskipTests package` com JDK 21 |
 | Testes | em paralelo com o build | `mvn -B test` (suíte JUnit/Mockito, sem banco) |
-| Deploy staging | push em `main`, ou disparo manual de `deploy-staging.yml` | cria as VMs na Locaweb Cloud e publica a API com Kamal |
-| Deploy produção | tag `v*` ou disparo manual de `deploy-production.yml` | o mesmo fluxo, em máquinas separadas |
 
-Pull request só compila e testa. Não faz deploy.
-
-O deploy de nuvem está em `.github/workflows/deploy-staging.yml` e `deploy-production.yml`. Cada ambiente ganha duas máquinas na zona `ZP01`: a API (`small`, 2 GiB) e o Oracle XE (`medium`, 4 GiB). O endereço público fica `https://<ip>.nip.io` e o proxy consulta `GET /up`. O Compose local, descrito acima, continua valendo para a máquina de desenvolvimento.
+Pull request só compila e testa. O Compose local, descrito acima, continua valendo para a máquina de desenvolvimento.
 
 ## Containerização
 
 O `Dockerfile` é multi-stage:
 
-1. `maven:3.9-eclipse-temurin-21` baixa dependências, compila e gera o jar. Os testes não rodam na imagem (`-DskipTests`); quem os executa é o job **Testes** do pipeline, antes do deploy.
+1. `maven:3.9-eclipse-temurin-21` baixa dependências, compila e gera o jar. Os testes não rodam na imagem (`-DskipTests`); quem os executa é o job **Testes** do pipeline.
 2. `eclipse-temurin:21-jre-alpine` copia só o jar, cria o usuário `spring` e sobe a API na porta 8080.
 
 O `docker-compose.yml` orquestra API + Oracle XE 21:

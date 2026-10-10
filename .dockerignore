@@ -9,3 +9,5 @@ mvnw.cmd
 *.md
 postman/
 .vscode/
+.env
+deploy/*.env
