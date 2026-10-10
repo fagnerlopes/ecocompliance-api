@@ -73,7 +73,7 @@ Rotas sem prefixo `/api`. Paginação padrão: `@PageableDefault(size = 20, sort
 
 `SecurityConfig` é a fonte da autorização:
 
-- `POST /auth/**` público
+- `POST /auth/**`, `GET /ambiente` e `GET /up` públicos. `/ambiente` só devolve o nome da aplicação e o valor de `APP_ENV` (`local`, `staging` ou `production`). `/up` responde `{"status":"up"}` para o healthcheck do proxy.
 - POST, PUT e DELETE dos recursos de negócio exigem `ADMIN`
 - GET exige `USER` ou `ADMIN`
 - Swagger e `/v3/api-docs` são públicos
