@@ -2,7 +2,7 @@ name: CI/CD
 
 on:
   push:
-    branches: [main, develop, cursor/entrega-devops]
+    branches: [main, develop]
   pull_request:
     branches: [main, develop]
 
@@ -38,10 +38,23 @@ jobs:
       - name: Executar a suíte
         run: mvn -B test
 
+  somente-develop:
+    name: Somente develop
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Recusar pull request que não venha da develop
+        run: |
+          if [ "${{ github.head_ref }}" != "develop" ]; then
+            echo "A main só aceita pull request vindo da branch develop. Esta origem é ${{ github.head_ref }}."
+            exit 1
+          fi
+          echo "Origem aceita: develop."
+
   imagem:
     name: Imagem
     needs: [build, test]
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/cursor/entrega-devops')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ github.sha }}
@@ -61,6 +74,7 @@ jobs:
   deploy-staging:
     name: Deploy staging
     needs: imagem
+    if: github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
     steps:
       - uses: azure/login@v2
@@ -84,6 +98,7 @@ jobs:
   deploy-production:
     name: Deploy produção
     needs: imagem
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: azure/login@v2
