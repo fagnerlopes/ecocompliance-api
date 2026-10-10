@@ -137,4 +137,28 @@ class EmpresaControllerTest {
                         .with(csrf()))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    @DisplayName("atualizar com admin autenticado deve retornar 200")
+    @WithMockUser(roles = "ADMIN")
+    void atualizar_comAdminAutenticado_retorna200() throws Exception {
+        when(empresaService.atualizar(eq(1L), any())).thenReturn(responseValido());
+
+        mockMvc.perform(put("/empresas/1")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestValido())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1));
+    }
+
+    @Test
+    @DisplayName("excluir com admin autenticado deve retornar 204")
+    @WithMockUser(roles = "ADMIN")
+    void excluir_comAdminAutenticado_retorna204() throws Exception {
+        doNothing().when(empresaService).excluir(1L);
+
+        mockMvc.perform(delete("/empresas/1").with(csrf()))
+                .andExpect(status().isNoContent());
+    }
 }

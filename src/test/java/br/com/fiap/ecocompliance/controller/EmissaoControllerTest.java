@@ -134,4 +134,39 @@ class EmissaoControllerTest {
                         .with(csrf()))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    @DisplayName("buscar por ID com usuário autenticado deve retornar 200")
+    @WithMockUser(roles = "USER")
+    void buscarPorId_comUserAutenticado_retorna200() throws Exception {
+        when(emissaoService.buscarPorId(1L)).thenReturn(responseValido());
+
+        mockMvc.perform(get("/emissoes/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fonteEmissao").value("Caldeiras industriais"));
+    }
+
+    @Test
+    @DisplayName("atualizar com admin autenticado deve retornar 200")
+    @WithMockUser(roles = "ADMIN")
+    void atualizar_comAdminAutenticado_retorna200() throws Exception {
+        when(emissaoService.atualizar(eq(1L), any())).thenReturn(responseValido());
+
+        mockMvc.perform(put("/emissoes/1")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestValido())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1));
+    }
+
+    @Test
+    @DisplayName("excluir com admin autenticado deve retornar 204")
+    @WithMockUser(roles = "ADMIN")
+    void excluir_comAdminAutenticado_retorna204() throws Exception {
+        doNothing().when(emissaoService).excluir(1L);
+
+        mockMvc.perform(delete("/emissoes/1").with(csrf()))
+                .andExpect(status().isNoContent());
+    }
 }

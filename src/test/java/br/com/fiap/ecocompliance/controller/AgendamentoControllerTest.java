@@ -175,4 +175,40 @@ class AgendamentoControllerTest {
                         .with(csrf()))
                 .andExpect(status().isNoContent());
     }
+
+    @Test
+    @DisplayName("buscar por ID com usuário autenticado deve retornar 200")
+    @WithMockUser(roles = "USER")
+    void buscarPorId_comUserAutenticado_retorna200() throws Exception {
+        when(agendamentoService.buscarPorId(1L)).thenReturn(responseValido());
+
+        mockMvc.perform(get("/agendamentos-reducao/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.titulo").value("Troca de Caldeiras"));
+    }
+
+    @Test
+    @DisplayName("buscar por empresa deve retornar 200")
+    @WithMockUser(roles = "USER")
+    void buscarPorEmpresa_comUserAutenticado_retorna200() throws Exception {
+        when(agendamentoService.buscarPorEmpresa(1L)).thenReturn(List.of(responseValido()));
+
+        mockMvc.perform(get("/agendamentos-reducao/empresa/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].empresaId").value(1));
+    }
+
+    @Test
+    @DisplayName("atualizar com admin autenticado deve retornar 200")
+    @WithMockUser(roles = "ADMIN")
+    void atualizar_comAdminAutenticado_retorna200() throws Exception {
+        when(agendamentoService.atualizar(eq(1L), any())).thenReturn(responseValido());
+
+        mockMvc.perform(put("/agendamentos-reducao/1")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestValido())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("PENDENTE"));
+    }
 }

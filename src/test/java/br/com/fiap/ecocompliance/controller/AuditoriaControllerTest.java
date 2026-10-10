@@ -142,4 +142,18 @@ class AuditoriaControllerTest {
                         .with(csrf()))
                 .andExpect(status().isNoContent());
     }
+
+    @Test
+    @DisplayName("atualizar com admin autenticado deve retornar 200")
+    @WithMockUser(roles = "ADMIN")
+    void atualizar_comAdminAutenticado_retorna200() throws Exception {
+        when(auditoriaService.atualizar(eq(1L), any())).thenReturn(responseValido());
+
+        mockMvc.perform(put("/auditorias/1")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestValido())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nivelRisco").value("MEDIO"));
+    }
 }
