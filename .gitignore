@@ -36,6 +36,10 @@ build/
 *.log
 logs/
 
+### Ambiente local (o exemplo versionado fica em .env.example) ###
+.env
+deploy/
+
 ### OS ###
 .DS_Store
 Thumbs.db

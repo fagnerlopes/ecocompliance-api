@@ -2,7 +2,8 @@
 
 API RESTful para **Governança e Compliance Ambiental (ESG)**, desenvolvida em **Java 21 + Spring Boot 3** com **Oracle Database**, **Flyway**, **Spring Security + JWT** e **Docker**.
 
-> Atividade acadêmica – FIAP – Java Advanced.
+> Atividade acadêmica – FIAP – Tecnologia em Análise e Desenvolvimento de Sistemas.
+> Java Advanced (cap. 8) e disciplina de DevOps (“Navegando pelo mundo DevOps”).
 
 ---
 
@@ -49,6 +50,12 @@ API RESTful para **Governança e Compliance Ambiental (ESG)**, desenvolvida em *
     - [Testes de controller — `@WebMvcTest` + MockMvc](#testes-de-controller--webmvctest--mockmvc)
   - [Estrutura de pacotes](#estrutura-de-pacotes)
   - [Boas práticas aplicadas](#boas-práticas-aplicadas)
+  - [Como executar localmente com Docker](#como-executar-localmente-com-docker)
+  - [Pipeline CI/CD](#pipeline-cicd)
+  - [Containerização](#containerização)
+  - [Prints do funcionamento](#prints-do-funcionamento)
+  - [Tecnologias utilizadas](#tecnologias-utilizadas)
+  - [Checklist de entrega](#checklist-de-entrega)
   - [Autores](#autores)
 
 ---
@@ -586,7 +593,7 @@ Regra de negócio:
 
 ## Testes
 
-O projeto conta com **111 testes** (0 falhas) divididos em duas camadas.
+O projeto conta com **165 testes** (0 falhas) divididos em duas camadas.
 
 ### Testes unitários de service — Mockito puro (`@ExtendWith(MockitoExtension.class)`)
 
@@ -751,10 +758,123 @@ ecocompliance/
 - **Flyway** para versionamento de schema (V1 tabelas, V2 dados, V3 agendamentos).
 - **Lombok 1.18.38** compatível com JDK 21–24.
 - **SpringDoc OpenAPI** com esquema de segurança Bearer JWT documentado.
-- **111 testes** (63 de service + 45 de controller, Mockito puro + `@WebMvcTest`) — 0 falhas.
+- **165 testes** (Mockito puro + `@WebMvcTest`) — 0 falhas.
 - **`spring.jpa.open-in-view=false`** evita lazy loading fora da transação.
 - **Docker multi-stage** para imagem final pequena (~250 MB com JRE Alpine).
 - **Healthcheck** no `docker-compose` garante que a API só sobe após o Oracle estar pronto.
+
+---
+
+## Como executar localmente com Docker
+
+Há dois ambientes isolados, cada um com a API e um Oracle XE próprios (volume, rede e portas diferentes). As credenciais de demonstração estão em `.env.example`. Os arquivos prontos são `deploy/staging.env` e `deploy/production.env`.
+
+```bash
+chmod +x scripts/deploy-ambiente.sh
+
+# Produção na porta 8080 (Oracle no host em 1521)
+./scripts/deploy-ambiente.sh deploy/production.env
+
+# Staging na porta 8081 (Oracle no host em 1522)
+./scripts/deploy-ambiente.sh deploy/staging.env
+```
+
+O primeiro start de cada Oracle leva alguns minutos. O script espera `GET /ambiente` e faz login com o usuário inicial.
+
+```bash
+curl http://localhost:8080/ambiente
+# {"aplicacao":"ecocompliance","ambiente":"production"}
+
+curl http://localhost:8081/ambiente
+# {"aplicacao":"ecocompliance","ambiente":"staging"}
+```
+
+Swagger de produção: `http://localhost:8080/swagger-ui/index.html`.  
+Swagger de staging: `http://localhost:8081/swagger-ui/index.html`.
+
+Para derrubar um ambiente e apagar o volume daquele projeto:
+
+```bash
+docker compose --env-file deploy/staging.env -p ecocompliance-staging down -v
+docker compose --env-file deploy/production.env -p ecocompliance-api-main down -v
+```
+
+`down -v` em produção apaga o banco já migrado.
+
+## Pipeline CI/CD
+
+Ferramenta: **GitHub Actions** (`.github/workflows/ci-cd.yml`).
+
+| Etapa | Quando roda | O que faz |
+|---|---|---|
+| Build | push e pull request em `main` e `develop` | `mvn -B -DskipTests package` com JDK 21 |
+| Testes | em paralelo com o build | `mvn -B test` (suíte JUnit/Mockito, sem banco) |
+| Imagem | push em `main` ou `cursor/entrega-devops` | `az acr build` publica `ecocompliance-api` no ACR |
+| Deploy staging | depois da imagem | atualiza `ecocompliance-staging` |
+| Deploy produção | depois da imagem | atualiza `ecocompliance-production` |
+
+Pull request só compila e testa. Push em `main` ou `cursor/entrega-devops` publica os dois App Services. O Compose local, descrito acima, continua valendo para a máquina de desenvolvimento.
+
+Staging: `https://ecocompliance-staging.azurewebsites.net`.  
+Produção: `https://ecocompliance-production.azurewebsites.net`.
+
+## Containerização
+
+O `Dockerfile` é multi-stage:
+
+1. `maven:3.9-eclipse-temurin-21` baixa dependências, compila e gera o jar. Os testes não rodam na imagem (`-DskipTests`); quem os executa é o job **Testes** do pipeline.
+2. `eclipse-temurin:21-jre-alpine` copia só o jar, cria o usuário `spring` e sobe a API na porta 8080.
+
+O `docker-compose.yml` orquestra API + Oracle XE 21:
+
+- rede bridge `ecocompliance-net` (a API fala com o host `oracle-db`)
+- volume `oracle-data` em `/opt/oracle/oradata`
+- variáveis `APP_ENV`, `API_PORT`, `ORACLE_PORT`, usuários e `JWT_SECRET`
+- a API só inicia depois do healthcheck do Oracle
+
+A imagem da API recebe a tag `ecocompliance-api:${APP_ENV}` (`staging`, `production` ou `local`).
+
+## Prints do funcionamento
+
+Evidências desta máquina em 10/10/2026, com os dois ambientes no ar ao mesmo tempo. As capturas estão em `docs/evidencias/`.
+
+```text
+$ curl http://localhost:8080/ambiente
+{"aplicacao":"ecocompliance","ambiente":"production"}
+
+$ curl http://localhost:8081/ambiente
+{"aplicacao":"ecocompliance","ambiente":"staging"}
+```
+
+- `docs/evidencias/producao-ambiente.png` e `docs/evidencias/staging-ambiente.png`
+- `docs/evidencias/producao-swagger.png` e `docs/evidencias/staging-swagger.png`
+
+O login `admin@ecocompliance.com` respondeu HTTP 200 nos dois. A suíte `mvn test` conclui sem falhas (165 testes).
+
+O PDF `docs/EcoCompliance-DevOps.pdf` reúne a descrição do pipeline, a arquitetura Docker, essas evidências, os desafios e o checklist. A tela do GitHub Actions aparece depois do primeiro push deste workflow para `main` ou `develop` em `https://github.com/fagnerlopes/ecocompliance-api`.
+
+## Tecnologias utilizadas
+
+| Categoria | Tecnologia |
+|---|---|
+| Aplicação | Java 21, Spring Boot 3.3, Spring Security, JWT, Flyway |
+| Banco | Oracle Database 21 XE (`gvenzl/oracle-xe:21-slim`) |
+| Build | Maven |
+| Testes | JUnit 5, Mockito, Spring Boot Test |
+| Containers | Docker, Docker Compose |
+| CI/CD | GitHub Actions |
+
+## Checklist de entrega
+
+| Item | OK |
+|---|---|
+| Projeto compactado em .ZIP com estrutura organizada | sim |
+| Dockerfile funcional | sim |
+| docker-compose.yml ou arquivos Kubernetes | sim |
+| Pipeline com etapas de build, teste e deploy | sim |
+| README.md com instruções e prints | sim |
+| Documentação técnica com evidências (PDF ou PPT) | sim |
+| Deploy realizado nos ambientes staging e produção | sim |
 
 ---
 
