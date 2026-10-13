@@ -36,9 +36,9 @@ build/
 *.log
 logs/
 
-### Ambiente local (o exemplo versionado fica em .env.example) ###
+### Ambiente local (os exemplos versionados ficam em .env.example e deploy/*.env.example) ###
 .env
-deploy/
+deploy/*.env
 
 ### OS ###
 .DS_Store
