@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "empresaId",
+    "empresaNome",
+    "tipoLicenca",
+    "numeroLicenca",
+    "dataEmissao",
+    "dataValidade",
+    "status",
+    "orgaoEmissor"
+  ],
+  "properties": {
+    "id": {
+      "type": "integer"
+    },
+    "empresaId": {
+      "type": "integer"
+    },
+    "empresaNome": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tipoLicenca": {
+      "type": "string",
+      "minLength": 1
+    },
+    "numeroLicenca": {
+      "type": "string",
+      "minLength": 1
+    },
+    "dataEmissao": {
+      "type": "string",
+      "minLength": 8
+    },
+    "dataValidade": {
+      "type": "string",
+      "minLength": 8
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ATIVA",
+        "VENCIDA",
+        "SUSPENSA",
+        "CANCELADA"
+      ]
+    },
+    "orgaoEmissor": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

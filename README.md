@@ -593,7 +593,19 @@ Regra de negócio:
 
 ## Testes
 
-O projeto conta com **166 testes** (0 falhas) divididos em duas camadas.
+A entrega da fase de testes automatizados é o projeto Maven `testes-automatizados`. Ele sobe à parte da API: o Cucumber lê os cenários Gherkin e o Rest Assured chama a API que está no Docker. A suíte interna da API, com Mockito e `@WebMvcTest`, continua no `mvn test` da raiz e não abre o Oracle.
+
+### Projeto de testes HTTP
+
+```bash
+docker compose up --build -d
+cd testes-automatizados
+./scripts/executar.sh
+```
+
+O comando da suíte é `mvn clean test`. O `TestRunner` executa a tag `@regressivo`. O relatório sai em `testes-automatizados/target/cucumber-reports.html`. Outra URL: `API_BASE_URL=http://localhost:8081 mvn clean test`. O workflow `.github/workflows/testes-automatizados.yml` sobe o Compose, espera `GET /up` e roda a mesma suíte.
+
+Os detalhes estão em `testes-automatizados/README.md` e em `docs/EcoCompliance-Testes.pdf`.
 
 ### Testes unitários de service — Mockito puro (`@ExtendWith(MockitoExtension.class)`)
 
@@ -619,11 +631,35 @@ O projeto conta com **166 testes** (0 falhas) divididos em duas camadas.
 | `CompensacaoControllerTest` | 8 | GET lista paginada, GET por ID, 404, POST (201), PUT (200), 403, DELETE (204) |
 | `LicencaControllerTest` | 9 | GET lista paginada, GET vencendo, 404, POST (201), POST datas inválidas (400), 403, DELETE (204) |
 
+### Testes BDD — Cucumber e Gherkin
+
+Os cenários ficam em `src/test/resources/features/governanca.feature` e descrevem a governança do cadastro: quem pode criar empresa, o que a API recusa e como o login devolve o token. A execução entra no `mvn test` pela classe `ExecucaoCucumberTest`. Os passos usam MockMvc sobre o mesmo recorte `@WebMvcTest` dos controllers.
+
+| Cenário | Resultado esperado |
+|---|---|
+| Cadastrar empresa com dados válidos | 201, nome no corpo e contrato `empresa.json` |
+| Recusar empresa sem nome | 400 e erro de validação |
+| Usuário comum não cadastra empresa | 403 |
+| Consultar empresa inexistente | 404 |
+| Entrar com credenciais válidas | 200 e token Bearer |
+
+O relatório HTML sai em `target/cucumber-report.html`.
+
+### Testes de contrato — status, JSON e JSON Schema
+
+`ContratoApiTest` percorre as APIs de empresas, licenças, auditorias, emissões, compensações, agendamentos, autenticação, relatório, indicadores, ambiente e saúde. Cada resposta com corpo é conferida no status, em um campo do JSON e no schema em `src/test/resources/schemas/`. DELETE responde 204 sem corpo. Cadastro inválido e recurso inexistente conferem o schema `erro.json`.
+
 Para executar:
 
 ```bash
-# Todos os testes
-mvn test
+# Suíte inteira: service, controller, BDD e contrato
+mvn -B test
+
+# Só os cenários Gherkin
+mvn -B test -Dtest=ExecucaoCucumberTest
+
+# Só o contrato das APIs
+mvn -B test -Dtest=ContratoApiTest
 
 # Apenas os testes de service
 mvn test -Dtest="*ServiceTest"
@@ -634,6 +670,8 @@ mvn test -Dtest="*ControllerTest"
 # Uma classe específica
 mvn test -Dtest="LicencaServiceTest"
 ```
+
+O job **Testes** do GitHub Actions já executa `mvn -B test`, então os cenários e o contrato entram no pipeline junto com o restante da suíte.
 
 > - Testes de service usam Mockito com `mock-maker-subclass`, compatível com JDK 21+.
 > - Testes de controller usam `@WebMvcTest` + `@Import(SecurityConfig.class)` para carregar as regras de autorização, e `@WithMockUser` para simular autenticação.
@@ -758,7 +796,7 @@ ecocompliance/
 - **Flyway** para versionamento de schema (V1 tabelas, V2 dados, V3 agendamentos).
 - **Lombok 1.18.38** compatível com JDK 21–24.
 - **SpringDoc OpenAPI** com esquema de segurança Bearer JWT documentado.
-- **166 testes** (Mockito puro + `@WebMvcTest`) — 0 falhas.
+- **215 testes** na API (Mockito e `@WebMvcTest`) — 0 falhas. A suíte HTTP com Cucumber e Rest Assured fica no projeto `testes-automatizados`.
 - **`spring.jpa.open-in-view=false`** evita lazy loading fora da transação.
 - **Docker multi-stage** para imagem final pequena (~250 MB com JRE Alpine).
 - **Healthcheck** no `docker-compose` garante que a API só sobe após o Oracle estar pronto.
@@ -810,7 +848,8 @@ Ferramenta: **GitHub Actions** (`.github/workflows/ci-cd.yml`).
 | Etapa | Quando roda | O que faz |
 |---|---|---|
 | Build | push e pull request em `main` e `develop` | `mvn -B -DskipTests package` com JDK 21 |
-| Testes | em paralelo com o build | `mvn -B test` — 166 testes, 0 falhas |
+| Testes | em paralelo com o build | `mvn -B test` — 215 testes da API, 0 falhas |
+| Testes BDD | manual ou no workflow `testes-automatizados.yml` | sobe o Compose e roda `mvn clean test` no projeto `testes-automatizados` |
 | Imagem | push em `develop` ou `main` | `az acr build` publica `ecocompliance-api` no ACR |
 | Deploy staging | push em `develop` | atualiza `ecocompliance-staging` |
 | Deploy produção | push em `main` | atualiza `ecocompliance-production` |
@@ -905,7 +944,7 @@ ecocompliance-api   production   d08ee1b943f8   269MB
 ecocompliance-api   staging      c87d0808dbe8   269MB
 ```
 
-A suíte do job Testes concluiu com 166 testes e nenhuma falha. O PDF `docs/EcoCompliance-DevOps.pdf` reúne o pipeline, o Docker, essas evidências, os desafios e o checklist.
+A suíte do job Testes, na evidência impressa abaixo, concluiu com 166 testes e nenhuma falha. O PDF `docs/EcoCompliance-DevOps.pdf` reúne o pipeline, o Docker, essas evidências, os desafios e o checklist. A suíte HTTP da fase de testes, executada em 1º de novembro de 2026 contra a API no Docker, concluiu 17 cenários e está em `docs/EcoCompliance-Testes.pdf`.
 
 ## Tecnologias utilizadas
 
@@ -914,7 +953,7 @@ A suíte do job Testes concluiu com 166 testes e nenhuma falha. O PDF `docs/EcoC
 | Aplicação | Java 21, Spring Boot 3.3, Spring Security, JWT, Flyway |
 | Banco | Oracle Database 21 XE (`gvenzl/oracle-xe:21-slim`) |
 | Build | Maven |
-| Testes | JUnit 5, Mockito, Spring Boot Test |
+| Testes | JUnit 5, Mockito, Spring Boot Test, Cucumber 7, JSON Schema |
 | Containers | Docker, Docker Compose |
 | CI/CD | GitHub Actions |
 
@@ -940,4 +979,4 @@ A suíte do job Testes concluiu com 166 testes e nenhuma falha. O PDF `docs/EcoC
 **Raphael Salomão Chamma** — RM 564765,
 **Ricardo Negrão da Veiga** — RM 564106.
 
-Atividade: Java Advanced – Microsserviços com Spring (Capítulo 8) e DevOps, fase 6 - DevOps.
+Atividade: Java Advanced – Microsserviços com Spring (Capítulo 8), DevOps, fase 6 - DevOps, e Testes Automatizados.

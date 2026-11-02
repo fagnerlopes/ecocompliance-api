@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "aplicacao",
+    "ambiente"
+  ],
+  "properties": {
+    "aplicacao": {
+      "type": "string",
+      "enum": [
+        "ecocompliance"
+      ]
+    },
+    "ambiente": {
+      "type": "string",
+      "enum": [
+        "local",
+        "staging",
+        "production"
+      ]
+    }
+  }
+}

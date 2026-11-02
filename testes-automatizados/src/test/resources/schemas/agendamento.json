@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "empresaId",
+    "empresaNome",
+    "titulo",
+    "descricao",
+    "tipoIniciativa",
+    "metaCo2",
+    "dataInicio",
+    "dataFim",
+    "status",
+    "dataCriacao"
+  ],
+  "properties": {
+    "id": {
+      "type": "integer"
+    },
+    "empresaId": {
+      "type": "integer"
+    },
+    "empresaNome": {
+      "type": "string",
+      "minLength": 1
+    },
+    "titulo": {
+      "type": "string",
+      "minLength": 1
+    },
+    "descricao": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tipoIniciativa": {
+      "type": "string",
+      "minLength": 1
+    },
+    "metaCo2": {
+      "type": "number"
+    },
+    "dataInicio": {
+      "type": "string",
+      "minLength": 8
+    },
+    "dataFim": {
+      "type": "string",
+      "minLength": 8
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "PENDENTE",
+        "EM_ANDAMENTO",
+        "CONCLUIDO",
+        "CANCELADO"
+      ]
+    },
+    "dataCriacao": {
+      "type": "string",
+      "minLength": 8
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "totalEmpresas",
+    "totalEmissoesCo2",
+    "totalCarbonoCompensado",
+    "saldoLiquidoCarbono",
+    "licencasAtivas",
+    "licencasVencidas",
+    "totalAuditorias",
+    "auditoriasAltoRisco",
+    "agendamentosEmAndamento",
+    "agendamentosPendentes"
+  ],
+  "properties": {
+    "totalEmpresas": {
+      "type": "integer"
+    },
+    "totalEmissoesCo2": {
+      "type": "number"
+    },
+    "totalCarbonoCompensado": {
+      "type": "number"
+    },
+    "saldoLiquidoCarbono": {
+      "type": "number"
+    },
+    "licencasAtivas": {
+      "type": "integer"
+    },
+    "licencasVencidas": {
+      "type": "integer"
+    },
+    "totalAuditorias": {
+      "type": "integer"
+    },
+    "auditoriasAltoRisco": {
+      "type": "integer"
+    },
+    "agendamentosEmAndamento": {
+      "type": "integer"
+    },
+    "agendamentosPendentes": {
+      "type": "integer"
+    }
+  }
+}

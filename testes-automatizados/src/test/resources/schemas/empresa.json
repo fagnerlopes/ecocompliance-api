@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "nome",
+    "cnpj",
+    "setor",
+    "emailResponsavel",
+    "createdAt"
+  ],
+  "properties": {
+    "id": {
+      "type": "integer"
+    },
+    "nome": {
+      "type": "string",
+      "minLength": 1
+    },
+    "cnpj": {
+      "type": "string",
+      "minLength": 1
+    },
+    "setor": {
+      "type": "string",
+      "minLength": 1
+    },
+    "emailResponsavel": {
+      "type": "string",
+      "minLength": 1
+    },
+    "createdAt": {
+      "type": "string",
+      "minLength": 8
+    }
+  }
+}
